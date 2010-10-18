@@ -1,0 +1,148 @@
+A Python implementation of the multistate Bennett acceptance ratio (MBAR) method
+described in reference [1] below.
+
+===============================================================================
+REFERENCES
+===============================================================================
+
+[1] Shirts MR and Chodera JD. Statistically optimal analysis of samples from
+multiple equilibrium states.  J. Chem. Phys. 129:124105, 2008.
+http://dx.doi.org/10.1063/1.2978177
+
+AUTHORS
+
+Written by John D. Chodera <jchodera@gmail.com> and Michael R. Shirts
+<mrshirts@gmail.com>.
+
+===============================================================================
+COPYRIGHT NOTICE
+===============================================================================
+
+Copyright (c) 2006-2009 The Regents of the University of California.  All Rights
+Reserved.  Portions of this software are Copyright (c) 2007-2008 Stanford
+University and Columbia University.
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
+ 
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ 
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+===============================================================================
+MANIFEST
+===============================================================================
+
+This archive contains the following files:
+
+README - this file
+GPL - a copy of the GNU General Public License version 2
+pymbar/ - Python MBAR package
+examples/ - examples of applications of MBAR to various types of experiments
+
+===============================================================================
+REQUIREMENTS
+===============================================================================
+
+The pymbar module requires Python 2.4 or later:
+
+http://www.python.org/
+
+and the NumPy package for array support:
+
+http://numpy.scipy.org/
+
+Some examples also require the SciPy package:
+
+http://www.scipy.org/
+
+===============================================================================
+USAGE
+===============================================================================
+
+First, add the directory containing this file to your PYTHONPATH environment
+variable.
+
+# For tcsh
+setenv PYTHONPATH "/path/to/pymbar:$PYTHONPATH"
+# For bash
+export PYTHONPATH="/path/to/pymbar:$PYTHONPTH"
+
+In Python 2.4 or later, you can view the docstrings with help():
+
+>>> from pymbar import MBAR
+>>> help(MBAR)
+
+See the example code in the docstrings, or find more elaborate examples in the
+examples/ directory.
+
+Basic usage involves first constructing a MBAR object, initializing it with the
+reduced potential from the simulation or experimental data:
+
+>>> mbar = MBAR.MBAR(u_kln, N_k)
+
+Next, we extract the dimensionless free energy differences and uncertainties:
+
+>>> (Deltaf_ij_estimated, dDeltaf_ij_estimated) = mbar.getFreeEnergyDifferences()
+
+or compute expectations of given observables A(x) for all states:
+
+>>> (A_k_estimated, dA_k_estimated) = mbar.computeExpectations(A_kn)
+
+See the help for these individual methods for more information on exact usage.
+
+===============================================================================
+OPTIMIZATIONS AND IMPROVEMENTS
+===============================================================================
+
+By default, the MBAR class uses self-consistent-iteration and Python/Numpy
+numerics to compute the dimensionless free energies when an MBAR object is
+initialized, the most time-consuming component of the analysis.
+
+There are two ways to speed up this procedure:
+
+* Newton-Raphson
+
+As described in the Appendix of Ref. [1], a Newton-Raphson implementation can
+give a significant speedup under many circumstances.  To use the Newton-Raphson
+solver, add the optional argument
+
+method = 'Newton-Raphson'
+
+to the MBAR initialization, as in 
+
+>>> mbar = MBAR.MBAR(u_kln, N_k, method = 'Newton-Raphson')
+
+Note that this does not work stably in all situations, though we are actively
+working to improve its stability.  In cases where the initial guess (generated
+by a single step of self-consistent-iteration) is poor, or when there is poor
+phase space overlap between some states, Newton-Raphson may fail, generating
+warning or error messages.  In these cases, the default method (method =
+'self-consistent-iteration') should still provide stable results.
+
+* C++ helper code
+
+We have provided a C++ helper code ('_MBAR.c') to speed up the most
+time-consuming operation in computing the dimensionless free energies (used by
+all methods).  For many applications, use of the compiled helper code results in
+a speedup of ~ 40x.  There should be no significant difference in the output (if
+any) between the pure-Python/Numpy results and those employing the helper
+routine.
+
+Information on compilation for several platforms can be found in the header of
+_MBAR.c
+
+MBAR.py will import and use the compiled dynamic library (_MBAR.so) provided it
+can be found in your PYTHONPATH.  An optional 'use_optimized' flag passed to the
+MBAR constructor can be used to force or disable this behavior.  Passing the
+flag use_optimized = False to the MBAR initialization will disable use of the
+module.
+
+>>> mbar = MBAR.MBAR(u_kln, N_k, use_optimized = False)
+
