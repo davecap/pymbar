@@ -125,6 +125,7 @@ def main():
             for j,l in enumerate(clean_split_lines):
                 data[i,j] = float(l[1])
             # TODO: support other kinds of coordinates?
+            #dataset = numpy.cos(data[i,:w['n']])
             dataset = numpy.cos(data[i,:w['n']]/(180.0/numpy.pi))
             g_k[i] = timeseries.statisticalInefficiency(dataset,dataset)
             indices = timeseries.subsampleCorrelatedData(dataset)
@@ -147,7 +148,7 @@ def main():
     print "Binning data..."
     
     data_min = numpy.min(data_min)
-    data_max = numpy.min(data_max)
+    data_max = numpy.max(data_max)
     delta = (data_max - data_min) / float(options.bins)
     
     print "Min coord: %f" % data_min
@@ -174,6 +175,9 @@ def main():
     
     for i in range(options.bins):
         if numpy.sum(bin_kn==i) == 0:
+            for i in range(options.bins):
+                print "Bin: %d" % i
+                print numpy.sum(bin_kn==i)
             raise Exception("At least one bin has no samples. Adjust bin sizes or eliminate empty bins to ensure at least one sample per bin.")        
 
     # Initialize MBAR.
@@ -190,12 +194,12 @@ def main():
     f = open(options.output_file, 'w')
     print "PMF (in units of kT)"
     print "%8s %8s %8s" % ('bin', 'f', 'df')
-    f.write("%8s %8s %8s\n" % ('bin', 'f', 'df'))
+    f.write("#Coor   Free    +/-\n" % ('bin', 'f', 'df'))
     for i in range(options.bins):
         print "%8.1f %8.3f %8.3f" % (bin_center_i[i], f_i[i], df_i[i])
         f.write("%8.1f %8.3f %8.3f\n" % (bin_center_i[i], f_i[i], df_i[i]))
     f.close()
-    
+
 if __name__=='__main__':
     main()
 
