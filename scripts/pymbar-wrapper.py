@@ -150,7 +150,8 @@ def main():
                     data[i] = float(l[1]) # second column is the coordinate
                     # third column will be the system's potential energy
                     potential_energy = float(l[2])
-                    restraint_potential = 0.5*w['k']*((w['coord']-data[i])*(w['coord']-data[i]))
+                    dchi = w['coord']-data[i]
+                    restraint_potential = 0.5*w['k']*(dchi**2)
                     # TODO: given the coordinate and the restraining potential, calculate the umbrella restraint
                     u_kn[i] = beta_k[i] * (potential_energy-restraint_potential) # reduced potential energy without umbrella restraint
         
@@ -179,34 +180,29 @@ def main():
 
     # Construct torsion bins
     print "Binning data..."
+    
     delta = (options.max_coord - options.min_coord) / float(options.bins)
     # compute bin centers
     bin_center_i = numpy.zeros([options.bins], numpy.float64)
     for i in range(options.bins):
         bin_center_i[i] = options.min_coord + delta/2 + delta * i
+    
     # Bin data
     bin_kn = numpy.zeros([K,N_max], numpy.int32)
     for k in range(K):
-        for n in range(N_k[k]):
+        for n in range(metadata[k]['n']):            
             # Compute bin assignment.
+            # replica index, snapshot index
             bin_kn[k,n] = int((data[k,n] - options.min_coord) / delta)
-
-    # Evaluate reduced energies in all umbrellas
-    print "Evaluating reduced potential energies..."
-    for k in range(K):
-        for n in range(N_k[k]):
             for l in range(K):
                 # Compute minimum-image torsion deviation from umbrella center l
-                dchi = data[k,n] - chi0_k[l]
-                if abs(dchi) > 180.0:
-                    dchi = 360.0 - abs(dchi)
-
+                dchi = data[k,n] - metadata[l]['coord']
                 # Compute energy of snapshot n from simulation k in umbrella potential l
-                u_kln[k,l,n] = u_kn[k,n] + beta_k[k] * (metadata[l]['k']/2.0) * dchi**2
+                u_kln[k,l,n] = u_kn[k,n] + beta_k[k]*0.5*metadata[l]['k']*(dchi**2)
 
     # Initialize MBAR.
     print "Running MBAR..."
-    mbar = pymbar.MBAR(u_kln, N_k, verbose = True, method = 'self-consistent-iteration',initialize='BAR')
+    mbar = pymbar.MBAR(u_kln, N_k, verbose=True, method='self-consistent-iteration', initialize='BAR')
     #mbar = pymbar.MBAR(u_kln, N_k, verbose = True, method = 'Newton-Raphson')
 
     # Compute PMF in unbiased potential (in units of kT).
