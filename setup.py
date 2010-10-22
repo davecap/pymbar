@@ -1,7 +1,7 @@
 from distutils.core import setup, Extension
 import numpy
 
-module1 = Extension('pymbar',
+module1 = Extension('_pymbar',
                     sources = ['pymbar/_pymbar.c'],
                     include_dirs = [numpy.get_include()])
 
