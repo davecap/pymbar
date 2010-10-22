@@ -1,4 +1,9 @@
-from distutils.core import setup
+from distutils.core import setup, Extension
+import numpy
+
+module1 = Extension('pymbar',
+                    sources = ['pymbar/_pymbar.c'],
+                    include_dirs = [numpy.get_include()])
 
 # Dynamically calculate the version based on pymbar.VERSION.
 version = __import__('pymbar').__version__
@@ -12,5 +17,6 @@ setup(
     author_email = 'mrshirts@gmail.com',
     description = 'A Python implementation of the multistate Bennett acceptance ratio (MBAR)',
     packages = ['pymbar'],
+    ext_modules = [module1],
 )
 
