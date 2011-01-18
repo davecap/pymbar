@@ -76,7 +76,7 @@ def main():
             if options.double_k:
                 k = k*0.5
             if options.kcal_k:
-                k = k/4.184
+                k = k*4.184
             
             current_meta = { 'path': clean_split[0], 'coord': float(clean_split[1]), 'k': k, 'n': nsnapshots }
             #   K_k[k] = float(tokens[1]) * (numpy.pi/180)**2 # spring constant (read in kJ/mol/rad**2, converted to kJ/mol/deg**2)    
