@@ -74,7 +74,7 @@ def main():
             # /path/to/timeseries/file  loc_win_min spring  [correl time] [temperature]
             k = float(clean_split[2])
             if options.double_k:
-                k = k*2
+                k = k*2.0
             if options.kcal_k:
                 k = k*4.184
             
@@ -134,9 +134,7 @@ def main():
             # no temperature column
             for j,l in enumerate(clean_split_lines):
                 data[i,j] = float(l[1])
-            # TODO: support other kinds of coordinates?
-            #dataset = numpy.cos(data[i,:w['n']])
-            dataset = numpy.cos(data[i,:w['n']]/(180.0/numpy.pi))
+            dataset = numpy.cos(data[i,:w['n']])
             g_k[i] = timeseries.statisticalInefficiency(dataset,dataset)
             if not options.skip_subsampling:
                 indices = timeseries.subsampleCorrelatedData(dataset)
