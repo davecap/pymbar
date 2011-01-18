@@ -143,6 +143,8 @@ def main():
             data_max.append(numpy.max(data[i]))
             data_min.append(numpy.min(data[i]))
             w['n'] = len(data[i])
+            u_kn[i,0:w['n']] = u_kn[i]
+            data[i,0:w['n']] = data[i]
         else:
             # get min and max for data, used for binning ranges
             data_max.append(numpy.max(data[i,indices]))
