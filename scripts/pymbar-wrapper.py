@@ -43,7 +43,7 @@ def main():
     
     (options, args) = parser.parse_args()
     
-    if args < 1:
+    if len(args) < 1:
         parser.error('No metadata file passed')
     elif not os.path.exists(args[0]):
         parser.error('Metadata file not found')
