@@ -36,7 +36,10 @@ def main():
     parser.add_option("-o", "--outfile", dest="output_file", default='mbar_pmf.out', help="Output file for PMF [default: %default]")
     parser.add_option("-t", "--temperature", dest="temperature", default=300., type="float", help="Initial temperature in K [default: %default K]")
     parser.add_option("-b", "--bins", dest="bins", default=50, type="int", help="Number of bins for 1D PMF [default: %default]")
-    
+    parser.add_option("-d", "--double", dest="double_k", default=False, action='store_true', help="Divide the k values by 2 [default: %default]")
+    parser.add_option("-c", "--kcal", dest="kcal_k", default=False, action='store_true', help="Convert k values from kcal to kJ [default: %default]")
+    parser.add_option("-s", "--skip-subsampling", dest="skip_subsampling", default=False, action='store_true', help="Skip data subsampling [default: %default]")
+
     (options, args) = parser.parse_args()
     
     if args < 1:
@@ -68,8 +71,13 @@ def main():
             # get the number of snapshots for the replica
             nsnapshots = file_len(clean_split[0])
             # /path/to/timeseries/file  loc_win_min spring  [correl time] [temperature]
-            current_meta = { 'path': clean_split[0], 'coord': float(clean_split[1]), 'k': float(clean_split[2]), 'n': nsnapshots }
-            # TODO: spring constant units?
+            k = float(clean_split[2])
+            if options.double_k:
+                k = k*0.5
+            if options.kcal_k:
+                k = k/4.184
+            
+            current_meta = { 'path': clean_split[0], 'coord': float(clean_split[1]), 'k': k, 'n': nsnapshots }
             #   K_k[k] = float(tokens[1]) * (numpy.pi/180)**2 # spring constant (read in kJ/mol/rad**2, converted to kJ/mol/deg**2)    
             
             if len(clean_split) >= 4:
@@ -105,21 +113,22 @@ def main():
         clean_split_lines = [ filter(None, line.strip().expandtabs().split(' ')) for line in lines if not line.startswith('#') ]
 
         if different_temperatures:
+            raise Exception('Differen\'t temperatures aren\'t supported yet')
             # if different temperatures are specified the metadata file, 
             # then we need the energies to compute the PMF, found in the third column
-            for j,l in enumerate(clean_split_lines):
-                data[i,j] = float(l[1]) # second column is the coordinate
-                # third column will be the system's potential energy
-                potential_energy = float(l[2])
-                dchi = w['coord']-float(l[1])
-                restraint_potential = 0.5*w['k']*(dchi**2)
-                # TODO: given the coordinate and the restraining potential, calculate the umbrella restraint
-                u_kn[i,j] = beta_k[i] * (potential_energy-restraint_potential) # reduced potential energy without umbrella restraint
-        
-            # Compute correlation times for potential energy and timeseries.
-            # If the temperatures differ, use energies to determine samples; otherwise, use the cosine of chi
-            g_k[i] = timeseries.statisticalInefficiency(u_kn[i,:], u_kn[i,:])
-            indices = timeseries.subsampleCorrelatedData(u_kn[i,:])
+            # for j,l in enumerate(clean_split_lines):
+            #     data[i,j] = float(l[1]) # second column is the coordinate
+            #     # third column will be the system's potential energy
+            #     potential_energy = float(l[2])
+            #     dchi = w['coord']-float(l[1])
+            #     restraint_potential = k_multiplier*w['k']*(dchi**2)
+            #     # TODO: given the coordinate and the restraining potential, calculate the umbrella restraint
+            #     u_kn[i,j] = beta_k[i] * (potential_energy-restraint_potential) # reduced potential energy without umbrella restraint
+            #         
+            # # Compute correlation times for potential energy and timeseries.
+            # # If the temperatures differ, use energies to determine samples; otherwise, use the cosine of chi
+            # g_k[i] = timeseries.statisticalInefficiency(u_kn[i,:], u_kn[i,:])
+            # indices = timeseries.subsampleCorrelatedData(u_kn[i,:])
         else:
             # no temperature column
             for j,l in enumerate(clean_split_lines):
@@ -128,17 +137,22 @@ def main():
             #dataset = numpy.cos(data[i,:w['n']])
             dataset = numpy.cos(data[i,:w['n']]/(180.0/numpy.pi))
             g_k[i] = timeseries.statisticalInefficiency(dataset,dataset)
-            indices = timeseries.subsampleCorrelatedData(dataset)
+            if not options.skip_subsampling:
+                indices = timeseries.subsampleCorrelatedData(dataset)
 
-        # get min and max for data, used for binning ranges
-        data_max.append(numpy.max(data[i,indices]))
-        data_min.append(numpy.min(data[i,indices]))
-        
-        # Subsample the data
-        w['n'] = len(indices)
-        u_kn[i,0:w['n']] = u_kn[i,indices]
-        data[i,0:w['n']] = data[i,indices]
-        print "Correlation time for set %5d is %10.3f" % (i,g_k[i])
+        if options.skip_subsampling:
+            data_max.append(numpy.max(data[i]))
+            data_min.append(numpy.min(data[i]))
+            w['n'] = len(data[i])
+        else:
+            # get min and max for data, used for binning ranges
+            data_max.append(numpy.max(data[i,indices]))
+            data_min.append(numpy.min(data[i,indices]))
+            # Subsample the data
+            w['n'] = len(indices)
+            u_kn[i,0:w['n']] = u_kn[i,indices]
+            data[i,0:w['n']] = data[i,indices]
+            print "Correlation time for set %5d is %10.3f" % (i,g_k[i])
 
     print "Finished reading data files"
     # Set zero of u_kn -- this is arbitrary.
@@ -171,7 +185,7 @@ def main():
                 # Compute minimum-image torsion deviation from umbrella center l
                 dchi = data[k,n] - metadata[l]['coord']
                 # Compute energy of snapshot n from simulation k in umbrella potential l
-                u_kln[k,l,n] = u_kn[k,n] + beta_k[k]*0.5*metadata[l]['k']*(dchi**2)
+                u_kln[k,l,n] = u_kn[k,n] + beta_k[k]*metadata[l]['k']*(dchi**2)
     
     for i in range(options.bins):
         if numpy.sum(bin_kn==i) == 0:
