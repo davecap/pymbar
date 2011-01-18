@@ -36,7 +36,7 @@ def main():
     parser.add_option("-o", "--outfile", dest="output_file", default='mbar_pmf.out', help="Output file for PMF [default: %default]")
     parser.add_option("-t", "--temperature", dest="temperature", default=300., type="float", help="Initial temperature in K [default: %default K]")
     parser.add_option("-b", "--bins", dest="bins", default=50, type="int", help="Number of bins for 1D PMF [default: %default]")
-    parser.add_option("-d", "--double", dest="double_k", default=False, action='store_true', help="Divide the k values by 2 [default: %default]")
+    parser.add_option("-d", "--double", dest="double_k", default=False, action='store_true', help="Double the k values [default: %default]")
     parser.add_option("-c", "--kcal", dest="kcal_k", default=False, action='store_true', help="Convert k values from kcal to kJ [default: %default]")
     parser.add_option("-s", "--skip-subsampling", dest="skip_subsampling", default=False, action='store_true', help="Skip data subsampling [default: %default]")
     parser.add_option("-v", "--verbose", dest="verbose", default=False, action="store_true", help="Verbose output from PyMBAR [default: %default]")
@@ -74,7 +74,7 @@ def main():
             # /path/to/timeseries/file  loc_win_min spring  [correl time] [temperature]
             k = float(clean_split[2])
             if options.double_k:
-                k = k*0.5
+                k = k*2
             if options.kcal_k:
                 k = k*4.184
             
