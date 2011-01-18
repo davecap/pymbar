@@ -39,7 +39,8 @@ def main():
     parser.add_option("-d", "--double", dest="double_k", default=False, action='store_true', help="Divide the k values by 2 [default: %default]")
     parser.add_option("-c", "--kcal", dest="kcal_k", default=False, action='store_true', help="Convert k values from kcal to kJ [default: %default]")
     parser.add_option("-s", "--skip-subsampling", dest="skip_subsampling", default=False, action='store_true', help="Skip data subsampling [default: %default]")
-
+    parser.add_option("-v", "--verbose", dest="verbose", default=False, action="store_true", help="Verbose output from PyMBAR [default: %default]")
+    
     (options, args) = parser.parse_args()
     
     if args < 1:
@@ -98,7 +99,7 @@ def main():
     data = numpy.zeros([K,N_max], numpy.float64) # the snapshot data
     u_kn = numpy.zeros([K,N_max], numpy.float64) # u_kn[k,n] is the reduced potential energy without umbrella restraints of snapshot n of umbrella simulation k
     u_kln = numpy.zeros([K,K,N_max], numpy.float64) # u_kln[k,l,n] is the reduced potential energy of snapshot n from umbrella simulation k evaluated at umbrella l
-    g_k = numpy.zeros([K],numpy.float32) # statistical inefficiency
+    g_k = numpy.zeros([K],numpy.float32) # correlation time
 
     data_min = [] # will set the min and max data values later
     data_max = []
@@ -174,7 +175,7 @@ def main():
         bin_center_i[i] = data_min + delta/2 + delta * i
     
     # Bin data
-    bin_kn = numpy.zeros([K,N_max], numpy.int32)
+    bin_kn = numpy.zeros([K,N_max], numpy.int32)-1
     # for each window
     for k in range(K):
         # for 0 to the number of snapshots in the window k
@@ -189,15 +190,15 @@ def main():
     
     for i in range(options.bins):
         if numpy.sum(bin_kn==i) == 0:
-            for i in range(options.bins):
-                print "Bin: %d" % i
-                print numpy.sum(bin_kn==i)
+            for j in range(options.bins):
+                print "Bin: %d" % j
+                print numpy.sum(bin_kn==j)
             raise Exception("At least one bin has no samples. Adjust bin sizes or eliminate empty bins to ensure at least one sample per bin.")        
 
     # Initialize MBAR.
     print "Running MBAR..."
     N_k = numpy.array([ w['n'] for w in metadata ], numpy.int32)
-    mbar = pymbar.MBAR(u_kln, N_k, verbose=True, method='self-consistent-iteration', initialize='BAR')
+    mbar = pymbar.MBAR(u_kln, N_k, verbose=options.verbose, method='self-consistent-iteration', initialize='BAR')
     #mbar = pymbar.MBAR(u_kln, N_k, verbose = True, method = 'Newton-Raphson')
 
     # Compute PMF in unbiased potential (in units of kT).
@@ -208,7 +209,7 @@ def main():
     f = open(options.output_file, 'w')
     print "PMF (in units of kT)"
     print "%8s %8s %8s" % ('bin', 'f', 'df')
-    f.write("#Coor   Free    +/-\n" % ('bin', 'f', 'df'))
+    f.write("#Coor   Free    +/-\n")
     for i in range(options.bins):
         print "%8.1f %8.3f %8.3f" % (bin_center_i[i], f_i[i], df_i[i])
         f.write("%8.1f %8.3f %8.3f\n" % (bin_center_i[i], f_i[i], df_i[i]))
