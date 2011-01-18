@@ -198,7 +198,8 @@ def main():
     # Initialize MBAR.
     print "Running MBAR..."
     N_k = numpy.array([ w['n'] for w in metadata ], numpy.int32)
-    mbar = pymbar.MBAR(u_kln, N_k, verbose=options.verbose, method='self-consistent-iteration', initialize='BAR')
+    mbar = pymbar.MBAR(u_kln, N_k, verbose=options.verbose, initialize='BAR')
+    #mbar = pymbar.MBAR(u_kln, N_k, verbose=options.verbose)
     #mbar = pymbar.MBAR(u_kln, N_k, verbose = True, method = 'Newton-Raphson')
 
     # Compute PMF in unbiased potential (in units of kT).

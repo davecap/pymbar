@@ -318,7 +318,8 @@ def BARzero(w_F,w_R,DeltaF):
 
     return fzero
 
-def BAR(w_F, w_R, DeltaF=0.0, compute_uncertainty=True, maximum_iterations=500, relative_tolerance=1.0e-11, verbose=False, method='false-position', optimized = True):
+def BAR(w_F, w_R, DeltaF=0.0, compute_uncertainty=True, maximum_iterations=500, relative_tolerance=1.0e-11, verbose=False, method='self-consistent-iteration', optimized = True):
+#def BAR(w_F, w_R, DeltaF=0.0, compute_uncertainty=True, maximum_iterations=500, relative_tolerance=1.0e-11, verbose=False, method='false-position', optimized = True):
   """
   Compute free energy difference using the Bennett acceptance ratio (BAR) method.
 
