@@ -1,5 +1,8 @@
-PyMBAR A Python implementation of the multistate Bennett acceptance ratio (MBAR)
-================================================================================
+# [DEPRECATED] Please see https://github.com/choderalab/pymbar
+
+
+## PyMBAR A Python implementation of the multistate Bennett acceptance ratio (MBAR)
+
 
 This is basically a minified version of the PyMAR SVN repository from https://simtk.org/home/pymbar
 
